@@ -1,0 +1,2 @@
+pandas==1.1.3
+stockquotes==2.0.1
