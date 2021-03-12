@@ -55,12 +55,30 @@ class SellRuleChecker:
             return False
         
     @staticmethod
+    def bad_break_sell_rule(symbol, price_tolerance=0.05, volume_tolerance=1.0):
+        stock = stockquotes.Stock(symbol)
+        curr_price = stock.current_price
+        prev_price = stock.historical[1]['close']
+        curr_vol = stock.historical[0]['volume']
+        prev_vol = stock.historical[1]['volume']
+        percent_gain_price = (curr_price-prev_price)/prev_price
+        percent_gain_vol = (curr_vol-prev_vol)/prev_vol
+        
+        if percent_gain_price <= price_tolerance and percent_gain_vol >= volume_tolerance:
+            print("Sell Based on Bad Break Sell Rule")
+            return True
+        else:
+            print("Do Not Sell Based on Bad Break Sell Rule")
+            return False
+        
+    @staticmethod
     def check_sell_rules(input_csv_path, output_csv_path):
         df = pd.read_csv(input_csv_path)
         df["Sell Golden Rule"] = False
         df["Sell Standard Profit Goal"] = False
         df["Place Trailing Stop for Decline from Peak Sell Rule"] = False
         df["Hold for 8 Weeks for Certainteed Exception Rule"] = False
+        df["Sell for Bad Break Sell Rule"] = False
 
         for i, stock in df.iterrows():
             symbol = stock["Symbol"]
@@ -69,10 +87,13 @@ class SellRuleChecker:
             investment_date = datetime.datetime.strptime(stock['Buy Date'],'%m/%d/%Y')
             avg_share_price = float(stock['Buy Price'].replace("$", ""))
             curr_price = stockquotes.Stock(symbol).current_price
+
             df.loc[df.Symbol == symbol, 'Sell Golden Rule'] = SellRuleChecker.golden_sell_rule(avg_share_price, curr_price=curr_price)
             df.loc[df.Symbol == symbol, 'Sell Standard Profit Goal'] = SellRuleChecker.standard_profit_goal_sell_rule(avg_share_price, curr_price=curr_price, investment_date=investment_date)
             df.loc[df.Symbol == symbol, 'Place Trailing Stop for Decline from Peak Sell Rule'] = SellRuleChecker.decline_from_peak_sell_rule(avg_share_price, curr_price=curr_price)
             df.loc[df.Symbol == symbol, 'Hold for 8 Weeks for Certainteed Exception Rule'] = SellRuleChecker.certainteed_exception_rule(avg_share_price, curr_price=curr_price, investment_date=investment_date)
+            df.loc[df.Symbol == symbol, 'Sell for Bad Break Sell Rule'] = SellRuleChecker.bad_break_sell_rule(symbol)
+            
             print("---------------------------------")
             df.to_csv(output_csv_path)
             

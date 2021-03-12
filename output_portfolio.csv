@@ -1,4 +1,4 @@
-,Symbol,Buy Price,Buy Date,Sell Golden Rule,Sell Standard Profit Goal,Place Trailing Stop for Decline from Peak Sell Rule,Hold for 8 Weeks for Certainteed Exception Rule
-0,XPEL,$64.48,03/11/2021,False,False,False,False
-1,SKLZ,$25.39,03/09/2021,False,False,True,False
-2,PLTR,$24.73,03/03/2021,False,False,True,False
+,Symbol,Buy Price,Buy Date,Sell Golden Rule,Sell Standard Profit Goal,Place Trailing Stop for Decline from Peak Sell Rule,Hold for 8 Weeks for Certainteed Exception Rule,Sell for Bad Break Sell Rule
+0,XPEL,$64.48,03/11/2021,False,False,False,False,False
+1,SKLZ,$25.39,03/09/2021,False,False,False,False,False
+2,PLTR,$24.73,03/03/2021,False,False,True,False,False
