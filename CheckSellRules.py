@@ -1,8 +1,9 @@
 import datetime
 import pandas as pd
-import stockquotes
+import finviz
 import argparse
 import os
+import stockquotes
 
 class SellRuleChecker:
       
@@ -86,7 +87,7 @@ class SellRuleChecker:
             print(symbol)
             investment_date = datetime.datetime.strptime(stock['Buy Date'],'%m/%d/%Y')
             avg_share_price = float(stock['Buy Price'].replace("$", ""))
-            curr_price = stockquotes.Stock(symbol).current_price
+            curr_price = float(finviz.get_stock(symbol)['Price'])
 
             df.loc[df.Symbol == symbol, 'Sell Golden Rule'] = SellRuleChecker.golden_sell_rule(avg_share_price, curr_price=curr_price)
             df.loc[df.Symbol == symbol, 'Sell Standard Profit Goal'] = SellRuleChecker.standard_profit_goal_sell_rule(avg_share_price, curr_price=curr_price, investment_date=investment_date)
