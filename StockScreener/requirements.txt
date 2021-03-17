@@ -1,0 +1,5 @@
+pandas==1.1.3
+finviz
+stockquotes==2.0.1
+nest_asyncio
+yfinance
