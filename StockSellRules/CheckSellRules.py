@@ -85,7 +85,7 @@ class SellRuleChecker:
             symbol = stock["Symbol"]
             print("---------------------------------")
             print(symbol)
-            investment_date = datetime.datetime.strptime(stock['Buy Date'],'%m/%d/%Y')
+            investment_date = datetime.datetime.strptime(stock['Buy Date'],'%m/%d/%y')
             avg_share_price = float(stock['Buy Price'].replace("$", ""))
             curr_price = float(finviz.get_stock(symbol)['Price'])
 

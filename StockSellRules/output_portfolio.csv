@@ -1,0 +1,5 @@
+,Symbol,Buy Price,Buy Date,Sell Golden Rule,Sell Standard Profit Goal,Place Trailing Stop for Decline from Peak Sell Rule,Hold for 8 Weeks for Certainteed Exception Rule,Sell for Bad Break Sell Rule
+0,XPEL,$64.48,03/11/21,False,False,False,False,False
+1,AMAT,$120.08,03/16/21,False,False,False,False,False
+2,PLYM,$17.29,03/15/21,False,False,False,False,False
+3,GTN,$20.20,03/15/21,False,False,False,False,False
