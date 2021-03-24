@@ -71,7 +71,7 @@ class StockScreener:
   @staticmethod
   def SMA200_slope_positive_rule(yahoo_df, ticker, days=21):
     for day in range(days):
-      if moving_average(yahoo_df, days=200, delta=day) >= moving_average(yahoo_df, days=200, delta=day+1):
+      if StockScreener.moving_average(yahoo_df, days=200, delta=day) >= StockScreener.moving_average(yahoo_df, days=200, delta=day+1):
         continue
       else:
         return False
@@ -170,6 +170,7 @@ class StockScreener:
 
   @staticmethod
   def screen_stock(stock):
+    screened_stocks = {}
     if stock["Ticker"] == "":
       return
 
@@ -187,10 +188,10 @@ class StockScreener:
     except:
       return
 
-    SMA200_value = moving_average(yahoo_df, days=200)
-    SMA150_value = moving_average(yahoo_df, days=150)
-    SMA50_value = moving_average(yahoo_df, days=50)
-    SMA50_volume_value = moving_average_volume(yahoo_df, days=50)
+    SMA200_value = StockScreener.moving_average(yahoo_df, days=200)
+    SMA150_value = StockScreener.moving_average(yahoo_df, days=150)
+    SMA50_value = StockScreener.moving_average(yahoo_df, days=50)
+    SMA50_volume_value = StockScreener.moving_average_volume(yahoo_df, days=50)
 
     # Liquidity Rule
     if SMA50_value*SMA50_volume_value <= 20e6:
@@ -225,7 +226,7 @@ class StockScreener:
     else:
       shares_outstanding = 0
 
-    week52_high, week52_low = week52_low_high(yahoo_df)
+    week52_high, week52_low = StockScreener.week52_low_high(yahoo_df)
     
     screened_stocks[stock['Ticker']]['SMA200_value'] = SMA200_value
     screened_stocks[stock['Ticker']]['SMA150_value'] = SMA150_value
@@ -277,7 +278,7 @@ class StockScreener:
     screened_stocks[stock['Ticker']]['inst_ownership_rule'] = inst_ownership_rule
 
     # Positive 200d MA positive
-    SMA200_slope_rule = SMA200_slope_positive_rule(yahoo_df, ticker=stock['Ticker'], days=21)
+    SMA200_slope_rule = StockScreener.SMA200_slope_positive_rule(yahoo_df, ticker=stock['Ticker'], days=21)
     screened_stocks[stock['Ticker']]['SMA200_slope_rule'] = SMA200_slope_rule
         
     # 150d MA greater than 200d MA
@@ -343,7 +344,6 @@ class StockScreener:
 
   @staticmethod
   def main_screen(stock_list):
-    screened_stocks = {}
     results = process_map(StockScreener.screen_stock, stock_list, max_workers=16)
     screened_stocks = {}
     for d in results:
@@ -364,14 +364,13 @@ class StockScreener:
     
   @staticmethod
   def chart_pattern_screen(df_out):
-    df_passed = df_out[df_out["Primary Passed Tests"] >= 8]
-    df_passed = check_double_bottom_chart_pattern(df_passed)
-    df_passed = check_inverse_head_and_shoulder_chart_pattern(df_passed)
-    df_passed = check_multiple_bottom_chart_pattern(df_passed)
-    df_passed = check_channel_up_chart_pattern(df_passed)
-    df_passed = check_channel_up_strong_chart_pattern(df_passed)
-    df_passed = check_wedge_down_chart_pattern(df_passed)
-    df_passed = check_wedge_down_strong_chart_pattern(df_passed)
+    df_passed = StockScreener.check_double_bottom_chart_pattern(df_out)
+    df_passed = StockScreener.check_inverse_head_and_shoulder_chart_pattern(df_passed)
+    df_passed = StockScreener.check_multiple_bottom_chart_pattern(df_passed)
+    df_passed = StockScreener.check_channel_up_chart_pattern(df_passed)
+    df_passed = StockScreener.check_channel_up_strong_chart_pattern(df_passed)
+    df_passed = StockScreener.check_wedge_down_chart_pattern(df_passed)
+    df_passed = StockScreener.check_wedge_down_strong_chart_pattern(df_passed)
     return df_passed
 
   def screen(self):
@@ -387,6 +386,6 @@ class StockScreener:
 
 screener = StockScreener()
 df_final = screener.screen()
-df_final.to_csv("screener_results.py")
+df_final.to_csv("screener_results.csv")
 
   

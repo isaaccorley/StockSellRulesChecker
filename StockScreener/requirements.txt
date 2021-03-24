@@ -1,5 +1,8 @@
+git+git://github.com/mariostoev/finviz.git#1.3.4
 pandas==1.1.3
-finviz
+pandas_datareader
 stockquotes==2.0.1
 nest_asyncio
 yfinance
+tqdm==4.43.0
+
