@@ -14,10 +14,21 @@ def show_tables():
     data.set_index(['Unnamed: 0'], inplace=True)
     data.index.name=None
     data = data.sort_values(by=['Primary Passed Tests', 'Secondary Passed Tests'], ascending=False)
-    return render_template('view.html',tables=[data.to_html()],
+    data =  data.style.apply(color_passing_tests).render()
+    return render_template('view.html',tables=[data],
     titles = ['Stock Screener Results'])
 
-
+def color_passing_tests(s):
+    out = []
+    for idx,v in enumerate(s):
+        if type(v) == bool and v:
+            out.append('background-color: #77dd77')
+        else:
+            if idx % 2 == 0:
+                out.append('background-color: #eee')
+            else:
+                out.append('background-color: #fff')
+    return out
 def run_screener():
     print("Running Screener", file=sys.stdout)
     screener = StockScreener()
@@ -30,5 +41,5 @@ scheduler.add_job(func=run_screener, args=None, trigger='interval', id='job', se
 scheduler.start()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
     
