@@ -5,4 +5,6 @@ stockquotes==2.0.1
 nest_asyncio
 yfinance
 tqdm==4.43.0
-
+flask
+flask_apscheduler
+gunicorn

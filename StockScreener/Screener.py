@@ -1,7 +1,8 @@
 from finviz.screener import Screener
 import nest_asyncio
 import finviz
-import pandas_datareader as pdr
+
+from pandas_datareader import data as pdr
 import yfinance as yf
 yf.pdr_override() # <== that's all it takes :-)
 
@@ -85,6 +86,8 @@ class StockScreener:
     except:
       stocks = []
 
+    print("check_double_bottom_chart_pattern: ", stocks)
+
     df['Double Bottom Chart'] = False
     for stock in stocks:
       df.loc[df.Ticker == stock['Ticker'], 'Double Bottom Chart'] = True
@@ -97,6 +100,8 @@ class StockScreener:
       stocks = Screener(tickers=tickers, filters=['ta_pattern_headandshouldersinv'], table='Performance', order='price')
     except:
       stocks = []
+
+    print("check_inverse_head_and_shoulder_chart_pattern: ", stocks)
 
     df['Inverse Head and Shoulder Pattern'] = False
     for stock in stocks:
@@ -111,6 +116,8 @@ class StockScreener:
     except:
       stocks = []
 
+    print("check_multiple_bottom_chart_pattern: ", stocks)
+
     df['Multiple Bottom Pattern'] = False
     for stock in stocks:
       df.loc[df.Ticker == stock['Ticker'], 'Multiple Bottom Pattern'] = True
@@ -123,6 +130,8 @@ class StockScreener:
       stocks = Screener(tickers=tickers, filters=['ta_pattern_channelup'], table='Performance', order='price')
     except:
       stocks = []
+
+    print("check_channel_up_chart_pattern: ", stocks)
 
     df['Channel Up Pattern'] = False
     for stock in stocks:
@@ -137,9 +146,26 @@ class StockScreener:
     except:
       stocks = []
 
+    print("check_channel_up_strong_chart_pattern: ", stocks)
+
     df['Channel Up Strong Pattern'] = False
     for stock in stocks:
       df.loc[df.Ticker == stock['Ticker'], 'Channel Up Strong Pattern'] = True
+    return df
+
+  @staticmethod
+  def check_channel_down_chart_pattern(df):
+    tickers = df['Ticker'].unique()
+    try:
+      stocks = Screener(tickers=tickers, filters=['ta_pattern_channeldown'], table='Performance', order='price')
+    except:
+      stocks = []
+
+    print("check_channel_down_chart_pattern: ", stocks)
+
+    df['Channel Down Strong Pattern'] = False
+    for stock in stocks:
+      df.loc[df.Ticker == stock['Ticker'], 'Channel Down Strong Pattern'] = True
     return df
 
   @staticmethod
@@ -149,6 +175,8 @@ class StockScreener:
       stocks = Screener(tickers=tickers, filters=['ta_pattern_wedgedown'], table='Performance', order='price')
     except:
       stocks = []
+
+    print("check_wedge_down_chart_pattern: ", stocks)
 
     df['Wedge Down Pattern'] = False
     for stock in stocks:
@@ -163,6 +191,8 @@ class StockScreener:
     except:
       stocks = []
 
+    print("check_wedge_down_strong_chart_pattern: ", stocks)
+
     df['Wedge Down Strong Pattern'] = False
     for stock in stocks:
       df.loc[df.Ticker == stock['Ticker'], 'Wedge Down Strong Pattern'] = True
@@ -171,6 +201,7 @@ class StockScreener:
   @staticmethod
   def screen_stock(stock):
     screened_stocks = {}
+
     if stock["Ticker"] == "":
       return
 
@@ -184,7 +215,7 @@ class StockScreener:
     screened_stocks[stock['Ticker']] = {}
     
     try:
-        yahoo_df = pdr.get_data_yahoo(stock['Ticker'], interval = "d")
+      yahoo_df = pdr.get_data_yahoo(stock['Ticker'], interval = "1d")
     except:
       return
 
@@ -315,10 +346,12 @@ class StockScreener:
     else:
         close_above_52weekhigh_rule = False
     screened_stocks[stock['Ticker']]['close_above_52weekhigh_rule'] = close_above_52weekhigh_rule
+
     return screened_stocks
 
   @staticmethod
   def cleanup_screen(df_out):
+
     primary_rules = ['eps_QoQ_yearly_rule', 'sales_QoQ_yearly_rule', 'SMA200_slope_rule', 
                  'SMA150_greater_SMA200_rule', 'SMA50_greater_SMA150_rule', 'close_greater_SMA50_rule', 
                  'week52_span_rule', 'close_above_52weekhigh_rule']
@@ -340,11 +373,14 @@ class StockScreener:
         cols[idx] = rule + " (2nd)"
 
     df_out.columns = cols
+
+    df_out = df_out[df_out['Primary Passed Tests']>6]
     return df_out
 
   @staticmethod
   def main_screen(stock_list):
-    results = process_map(StockScreener.screen_stock, stock_list, max_workers=16)
+    results = process_map(StockScreener.screen_stock, stock_list, max_workers=8)
+
     screened_stocks = {}
     for d in results:
       if d is not None:
@@ -371,6 +407,7 @@ class StockScreener:
     df_passed = StockScreener.check_channel_up_strong_chart_pattern(df_passed)
     df_passed = StockScreener.check_wedge_down_chart_pattern(df_passed)
     df_passed = StockScreener.check_wedge_down_strong_chart_pattern(df_passed)
+    df_passed = StockScreener.check_channel_down_chart_pattern(df_passed)
     return df_passed
 
   def screen(self):
@@ -384,8 +421,9 @@ class StockScreener:
     df_final = StockScreener.chart_pattern_screen(df_out)
     return df_final
 
-screener = StockScreener()
-df_final = screener.screen()
-df_final.to_csv("screener_results.csv")
+if __name__ == "__main__":
+  screener = StockScreener()
+  df_final = screener.screen()
+  df_final.to_csv("screener_results.csv")
 
   
