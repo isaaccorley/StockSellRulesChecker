@@ -5,6 +5,7 @@
   <h1>Stock Screener Results</h1>
   {% for table in tables %}
     <h2>{{titles[loop.index]}}</h2>
+    
     {{ table|safe }}
   {% endfor %}
 </div>
