@@ -38,7 +38,7 @@ class StockScreener:
     if sales_qoq_over0pct:
       filters.append('fa_salesqoq_pos')
 
-    stock_list = Screener(filters=filters, table='Performance', order='price')
+    stock_list = Screener(tickers = ['YETI', 'APPS'], filters=filters, table='Performance', order='price')
     return stock_list
   
   @staticmethod
@@ -216,7 +216,7 @@ class StockScreener:
     screened_stocks[stock['Ticker']] = {}
     
     try:
-      yahoo_df = pdr.get_data_yahoo(stock['Ticker'], interval = "1d")
+      yahoo_df = pdr.get_data_yahoo(stock['Ticker'], interval = "1d", threads= False)
     except:
       return
 
