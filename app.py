@@ -29,6 +29,7 @@ def color_passing_tests(s):
             else:
                 out.append('background-color: #fff')
     return out
+
 def run_screener():
     print("Running Screener", file=sys.stdout)
     screener = StockScreener()
@@ -37,7 +38,7 @@ def run_screener():
 
 
 scheduler = APScheduler()
-scheduler.add_job(func=run_screener, args=None, trigger='interval', id='job', seconds=14400, next_run_time=datetime.now())
+scheduler.add_job(func=run_screener, args=None, trigger='cron', id='job', hour='6', minute='0')
 scheduler.start()
 
 if __name__ == "__main__":
