@@ -379,7 +379,13 @@ class StockScreener:
 
   @staticmethod
   def main_screen(stock_list):
-    results = process_map(StockScreener.screen_stock, stock_list, max_workers=1)
+
+    results = []
+    for stock in stock_list:
+      results.append(StockScreener.screen_stock(stock))
+
+    # Digital Ocean Does Not Support Multiprocessing
+    # results = process_map(StockScreener.screen_stock, stock_list, max_workers=1)
 
     screened_stocks = {}
     for d in results:
