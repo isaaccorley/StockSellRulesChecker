@@ -14,6 +14,7 @@ nest_asyncio.apply()
 
 import time
 from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
 
 class StockScreener:
 
@@ -381,7 +382,7 @@ class StockScreener:
   def main_screen(stock_list):
 
     results = []
-    for stock in stock_list:
+    for stock in tqdm(stock_list, total=len(stock_list.data)):
       results.append(StockScreener.screen_stock(stock))
 
     # Digital Ocean Does Not Support Multiprocessing
