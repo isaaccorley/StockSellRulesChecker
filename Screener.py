@@ -383,7 +383,11 @@ class StockScreener:
 
     results = []
     for stock in tqdm(stock_list, total=len(stock_list.data)):
-      results.append(StockScreener.screen_stock(stock))
+      try:
+        result = StockScreener.screen_stock(stock)
+        results.append(result)
+      except:
+        continue
 
     # Digital Ocean Does Not Support Multiprocessing
     # results = process_map(StockScreener.screen_stock, stock_list, max_workers=1)
