@@ -2,7 +2,7 @@
 <title>Simple tables</title>
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
 <div class=page>
-  <h1>Stock Screener Results</h1>
+  <h1>Stock Screener Results (Updated: {{ date }})</h1>
   {% for table in tables %}
     <h2>{{titles[loop.index]}}</h2>
     

@@ -4,6 +4,7 @@ from flask_apscheduler import APScheduler
 from Screener import StockScreener
 import sys
 from datetime import datetime
+import pathlib
 
 app = Flask(__name__)
 
@@ -15,8 +16,10 @@ def show_tables():
     data.index.name=None
     data = data.sort_values(by=['Primary Passed Tests', 'Secondary Passed Tests'], ascending=False)
     data =  data.style.apply(color_passing_tests).render()
-    return render_template('view.html',tables=[data],
-    titles = ['Stock Screener Results'])
+
+    fname = pathlib.Path('screener_results.csv')
+    date = datetime.fromtimestamp(fname.stat().st_mtime)
+    return render_template('view.html',tables=[data], date=date, titles = ['Stock Screener Results'])
 
 def color_passing_tests(s):
     out = []

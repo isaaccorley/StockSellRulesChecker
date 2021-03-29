@@ -62,6 +62,24 @@ class StockScreener:
       return float(df_days['Volume'].mean())
 
   @staticmethod
+  def relative_strength(yahoo_df, sp500_df, days=60, smoothing=2):
+
+    ratios = []
+    for i in range(days+1,0, -1):
+      curr_price = yahoo_df['Close'].tolist()[i]
+      prev_price = yahoo_df['Close'].tolist()[i-1]
+
+      curr_price_sp500 = sp500_df['Close'].tolist()[i]
+      prev_price_sp500 = sp500_df['Close'].tolist()[i-1]
+
+      if curr_price != prev_price and curr_price_sp500 != prev_price_sp500:
+        ratio = ((curr_price-prev_price)/prev_price) / ((curr_price_sp500-prev_price_sp500)/prev_price_sp500)
+        ratios.append(ratio)
+    pd_ratios = pd.Series(ratios)
+    rs = pd_ratios.ewm(span=60, adjust=False).mean().to_list()[-1]
+    return rs
+
+  @staticmethod
   def week52_low_high(yahoo_df):
       df = yahoo_df.reset_index()
       curr_date = df['Date'].max()
@@ -219,10 +237,15 @@ class StockScreener:
       yahoo_df = pdr.get_data_yahoo(stock['Ticker'], interval = "1d", threads= False)
     except:
       return
+    try:
+      sp500_df = pdr.get_data_yahoo("^GSPC", interval = "1d", threads= False)
+    except:
+      return
 
     SMA200_value = StockScreener.moving_average(yahoo_df, days=200)
     SMA150_value = StockScreener.moving_average(yahoo_df, days=150)
     SMA50_value = StockScreener.moving_average(yahoo_df, days=50)
+    RS_value = StockScreener.relative_strength(yahoo_df, sp500_df)
     SMA50_volume_value = StockScreener.moving_average_volume(yahoo_df, days=50)
 
     # Liquidity Rule
@@ -273,6 +296,14 @@ class StockScreener:
     screened_stocks[stock['Ticker']]['Inst. Ownership'] = inst_own
     screened_stocks[stock['Ticker']]['Shares Outstanding'] = shares_outstanding
     screened_stocks[stock['Ticker']]['volume'] = volume
+    screened_stocks[stock['Ticker']]['Relative Strength Value'] = RS_value
+
+    # RS Value > 1.0 rule:
+    if RS_value > 1.0:
+      rs_value_rule = True
+    else:
+      rs_value_rule = False
+    screened_stocks[stock['Ticker']]['rs_value_rule'] = rs_value_rule
 
     # volume*price > $15mm rule
     if volume*prev_close > 15000000:
