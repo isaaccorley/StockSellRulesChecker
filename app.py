@@ -7,7 +7,7 @@ from datetime import datetime
 import pathlib
 
 app = Flask(__name__)
-
+date = datetime.now()
 
 @app.route("/")
 def show_tables():
@@ -18,7 +18,7 @@ def show_tables():
     data =  data.style.apply(color_passing_tests).render()
 
     fname = pathlib.Path('screener_results.csv')
-    date = datetime.fromtimestamp(fname.stat().st_mtime)
+    date = datetime.now()
     return render_template('view.html',tables=[data], date=date, titles = ['Stock Screener Results'])
 
 def color_passing_tests(s):
@@ -37,6 +37,7 @@ def run_screener():
     print("Running Screener", file=sys.stdout)
     screener = StockScreener()
     df_final = screener.screen()
+    date = datetime.now()
     df_final.to_csv("screener_results.csv")
 
 
