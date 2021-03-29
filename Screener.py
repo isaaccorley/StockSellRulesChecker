@@ -406,7 +406,7 @@ class StockScreener:
 
     df_out.columns = cols
 
-    df_out = df_out[df_out['Primary Passed Tests']>8]
+    df_out = df_out[df_out['Primary Passed Tests']>7]
     return df_out
 
   @staticmethod
@@ -421,7 +421,7 @@ class StockScreener:
         continue
 
     # Digital Ocean Does Not Support Multiprocessing
-    # results = process_map(StockScreener.screen_stock, stock_list, max_workers=1)
+    # results = process_map(StockScreener.screen_stock, stock_list, max_workers=8)
 
     screened_stocks = {}
     for d in results:
