@@ -14,7 +14,16 @@ def show_tables():
     data = pd.read_csv('screener_results.csv')
     data.set_index(['Unnamed: 0'], inplace=True)
     data.index.name=None
-    data = data.sort_values(by=['Lwowski Rating'], ascending=False)
+
+    cols = data.columns
+    cols_first_rules = [col for col in cols if "(1st)" in col]
+    cols_second_rules = [col for col in cols if "(2nd)" in col]
+    cols_patterns = [col for col in cols if "Pattern" in col]
+    cols_order = ['Ticker', 'N-Value Rating', 'Lwowski Rating', 'Primary Passed Tests', 'Secondary Passed Tests'] + cols_first_rules + cols_second_rules + cols_patterns
+    remaining_cols = list(set(cols) - set(cols_order))
+    print(cols_order+remaining_cols)
+    data = data[cols_order+remaining_cols]
+    data = data.sort_values(by=['N-Value Rating', 'Lwowski Rating'], ascending=False)
     data =  data.style.apply(color_passing_tests).render()
 
     fname = pathlib.Path('screener_results.csv')

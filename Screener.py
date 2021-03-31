@@ -20,11 +20,11 @@ class StockScreener:
 
   @staticmethod
   def initial_screen():
-    eps_5year_over0pct = True
-    eps_qoq_over0pct = True
-    eps_yoy_over0pct = True
-    sales_5years_over0pct = True
-    sales_qoq_over0pct = True
+    eps_5year_over0pct = False
+    eps_qoq_over0pct = False
+    eps_yoy_over0pct = False
+    sales_5years_over0pct = False
+    sales_qoq_over0pct = False
 
     filters = []
     if eps_5year_over0pct:
@@ -105,8 +105,8 @@ class StockScreener:
       if curr_avg >= prev_avg:
         continue
       else:
-        return False, 0.0
-    return True, StockScreener.percent_diff(curr_avg,prev_avg)
+        return False, 0.0, 0.0
+    return True, StockScreener.percent_diff(curr_avg,prev_avg), 2**8
 
   @staticmethod
   def check_double_bottom_chart_pattern(df):
@@ -118,9 +118,9 @@ class StockScreener:
 
     print("check_double_bottom_chart_pattern: ", stocks)
 
-    df['Double Bottom Chart'] = False
+    df['Double Bottom Chart Pattern'] = False
     for stock in stocks:
-      df.loc[df.Ticker == stock['Ticker'], 'Double Bottom Chart'] = True
+      df.loc[df.Ticker == stock['Ticker'], 'Double Bottom Chart Pattern'] = True
     return df
 
   @staticmethod
@@ -230,219 +230,241 @@ class StockScreener:
 
   @staticmethod
   def screen_stock(stock):
-    screened_stocks = {}
-
-    if stock["Ticker"] == "":
-      return
-
-    finviz_stats = finviz.get_stock(stock['Ticker'])
-    prev_close = float(finviz_stats['Prev Close'].replace("$",""))
-
-    # Price greater than $10 rule
-    if prev_close < 10:
-      return
-
-    screened_stocks[stock['Ticker']] = {}
-    
     try:
-      yahoo_df = pdr.get_data_yahoo(stock['Ticker'], interval = "1d", threads= False)
-    except:
-      return
-    try:
-      sp500_df = pdr.get_data_yahoo("^GSPC", interval = "1d", threads= False)
-    except:
-      return
+      screened_stocks = {}
 
-    SMA200_value = StockScreener.moving_average(yahoo_df, days=200)
-    SMA150_value = StockScreener.moving_average(yahoo_df, days=150)
-    SMA50_value = StockScreener.moving_average(yahoo_df, days=50)
-    RS_value = StockScreener.relative_strength(yahoo_df, sp500_df)
-    SMA50_volume_value = StockScreener.moving_average_volume(yahoo_df, days=50)
+      if stock["Ticker"] == "":
+        return
 
-    # Liquidity Rule
-    if SMA50_value*SMA50_volume_value <= 20e6:
-      return
+      finviz_stats = finviz.get_stock(stock['Ticker'])
+      prev_close = float(finviz_stats['Prev Close'].replace("$",""))
 
-    SMA200_percent = float(finviz_stats['SMA200'].replace("%",""))/100
-    SMA50_percent = float(finviz_stats['SMA50'].replace("%",""))/100
-    volume = float(finviz_stats['Volume'].replace(",",""))
+      # Price greater than $10 rule
+      if prev_close < 10:
+        return
 
-    try:
-      EPS_QoQ_percent = float(finviz_stats['EPS Q/Q'].replace("%",""))/100
-    except:
-      EPS_QoQ_percent = 0
+      screened_stocks[stock['Ticker']] = {}
+      
+      try:
+        yahoo_df = pdr.get_data_yahoo(stock['Ticker'], interval = "1d", threads= False)
+      except:
+        return
+      try:
+        sp500_df = pdr.get_data_yahoo("^GSPC", interval = "1d", threads= False)
+      except:
+        return
 
-    try:
-      Sales_QoQ_percent = float(finviz_stats['Sales Q/Q'].replace("%",""))/100
-    except:
-      Sales_QoQ_percent = 0
+      SMA200_value = StockScreener.moving_average(yahoo_df, days=200)
+      SMA150_value = StockScreener.moving_average(yahoo_df, days=150)
+      SMA50_value = StockScreener.moving_average(yahoo_df, days=50)
+      RS_value = StockScreener.relative_strength(yahoo_df, sp500_df)
+      SMA50_volume_value = StockScreener.moving_average_volume(yahoo_df, days=50)
 
-    try:
-      inst_own = float(finviz_stats['Inst Own'].replace("%",""))/100
-    except:
-      inst_own = 0
-    
-    shares_outstanding = finviz_stats['Shs Outstand']
-    if 'M' in shares_outstanding:
-      shares_outstanding = float(shares_outstanding.replace("M", ""))*1e6
-    elif 'B' in shares_outstanding:
-      shares_outstanding = float(shares_outstanding.replace("B", ""))*1e9
-    elif 'T' in shares_outstanding:
-      shares_outstanding = float(shares_outstanding.replace("T", ""))*1e12
-    else:
-      shares_outstanding = 0
+      # Liquidity Rule
+      if SMA50_value*SMA50_volume_value <= 20e6:
+        return
 
-    week52_high, week52_low = StockScreener.week52_low_high(yahoo_df)
-    
-    screened_stocks[stock['Ticker']]['SMA200_value'] = SMA200_value
-    screened_stocks[stock['Ticker']]['SMA150_value'] = SMA150_value
-    screened_stocks[stock['Ticker']]['SMA50_value'] = SMA50_value
-    screened_stocks[stock['Ticker']]['SMA200_percent'] = SMA200_percent
-    screened_stocks[stock['Ticker']]['SMA50_percent'] = SMA50_percent
-    screened_stocks[stock['Ticker']]['EPS_QoQ_percent'] = EPS_QoQ_percent
-    screened_stocks[stock['Ticker']]['Sales_QoQ_percent'] = Sales_QoQ_percent
-    screened_stocks[stock['Ticker']]['prev_close'] = prev_close
-    screened_stocks[stock['Ticker']]['week52_high'] = week52_high
-    screened_stocks[stock['Ticker']]['week52_low'] = week52_low
-    screened_stocks[stock['Ticker']]['Inst. Ownership'] = inst_own
-    screened_stocks[stock['Ticker']]['Shares Outstanding'] = shares_outstanding
-    screened_stocks[stock['Ticker']]['volume'] = volume
-    screened_stocks[stock['Ticker']]['Relative Strength Value'] = RS_value
+      SMA200_percent = float(finviz_stats['SMA200'].replace("%",""))/100
+      SMA50_percent = float(finviz_stats['SMA50'].replace("%",""))/100
+      volume = float(finviz_stats['Volume'].replace(",",""))
 
-    # RS Value > 1.0 rule:
-    if RS_value > 1.0:
-      rs_value_rule = True
+      try:
+        EPS_QoQ_percent = float(finviz_stats['EPS Q/Q'].replace("%",""))/100
+      except:
+        EPS_QoQ_percent = 0
+
+      try:
+        Sales_QoQ_percent = float(finviz_stats['Sales Q/Q'].replace("%",""))/100
+      except:
+        Sales_QoQ_percent = 0
+
+      try:
+        inst_own = float(finviz_stats['Inst Own'].replace("%",""))/100
+      except:
+        inst_own = 0
+      
+      shares_outstanding = finviz_stats['Shs Outstand']
+      if 'M' in shares_outstanding:
+        shares_outstanding = float(shares_outstanding.replace("M", ""))*1e6
+      elif 'B' in shares_outstanding:
+        shares_outstanding = float(shares_outstanding.replace("B", ""))*1e9
+      elif 'T' in shares_outstanding:
+        shares_outstanding = float(shares_outstanding.replace("T", ""))*1e12
+      else:
+        shares_outstanding = 0
+
+      week52_high, week52_low = StockScreener.week52_low_high(yahoo_df)
+      
+      screened_stocks[stock['Ticker']]['SMA200_value'] = SMA200_value
+      screened_stocks[stock['Ticker']]['SMA150_value'] = SMA150_value
+      screened_stocks[stock['Ticker']]['SMA50_value'] = SMA50_value
+      screened_stocks[stock['Ticker']]['SMA200_percent'] = SMA200_percent
+      screened_stocks[stock['Ticker']]['SMA50_percent'] = SMA50_percent
+      screened_stocks[stock['Ticker']]['EPS_QoQ_percent'] = EPS_QoQ_percent
+      screened_stocks[stock['Ticker']]['Sales_QoQ_percent'] = Sales_QoQ_percent
+      screened_stocks[stock['Ticker']]['prev_close'] = prev_close
+      screened_stocks[stock['Ticker']]['week52_high'] = week52_high
+      screened_stocks[stock['Ticker']]['week52_low'] = week52_low
+      screened_stocks[stock['Ticker']]['Inst. Ownership'] = inst_own
+      screened_stocks[stock['Ticker']]['Shares Outstanding'] = shares_outstanding
+      screened_stocks[stock['Ticker']]['volume'] = volume
+      screened_stocks[stock['Ticker']]['Relative Strength Value'] = RS_value
+
+      # RS Value > 1.0 rule:
+      if RS_value > 1.0:
+        rs_value_rule = True
+        n_value = 2**8
+      else:
+        rs_value_rule = False
+        n_value = 0.0
       score = StockScreener.percent_diff(RS_value,1.0)
-    else:
-      rs_value_rule = False
-      score = 0.0
-    weight = 1.0
 
-    screened_stocks[stock['Ticker']]['rs_value_rule'] = rs_value_rule
-    screened_stocks[stock['Ticker']]['rs_value_rule_score'] = score*weight
+      screened_stocks[stock['Ticker']]['rs_value_rule'] = rs_value_rule
+      screened_stocks[stock['Ticker']]['rs_value_rule_score'] = score*n_value
+      screened_stocks[stock['Ticker']]['rs_value_rule_nvalue'] = n_value
 
-    # volume*price > $15mm rule
-    if volume*prev_close > 15000000:
-      vol_price_rule = True
+      # volume*price > $15mm rule
+      if volume*prev_close > 15000000:
+        vol_price_rule = True
+        
+        n_value = 2**4
+      else:
+        vol_price_rule = False
+        n_value = 0.0
+
       score = StockScreener.percent_diff(volume*prev_close, 15000000)
-    else:
-      vol_price_rule = False
-      score = StockScreener.percent_diff(volume*prev_close, 15000000)
-    weight = 0.5
-    screened_stocks[stock['Ticker']]['vol_price_rule'] = vol_price_rule
-    screened_stocks[stock['Ticker']]['vol_price_rule_score'] = weight*score
+      screened_stocks[stock['Ticker']]['vol_price_rule'] = vol_price_rule
+      screened_stocks[stock['Ticker']]['vol_price_rule_score'] = n_value*score
+      screened_stocks[stock['Ticker']]['vol_price_rule_nvalue'] = n_value
 
-    # EPS QoQ Yearly > 18% rule
-    if EPS_QoQ_percent >= .18:
-      eps_QoQ_yearly_rule = True
+      # EPS QoQ Yearly > 18% rule
+      if EPS_QoQ_percent >= .18:
+        eps_QoQ_yearly_rule = True
+        n_value = 2**8
+      else:
+        eps_QoQ_yearly_rule = False
+
       score = StockScreener.percent_diff(EPS_QoQ_percent, 0.18)
-    else:
-      eps_QoQ_yearly_rule = False
-      score = 0.0
-    weight = 1.0
-    screened_stocks[stock['Ticker']]['eps_QoQ_yearly_rule'] = eps_QoQ_yearly_rule
-    screened_stocks[stock['Ticker']]['eps_QoQ_yearly_rule_score'] = score*weight
+      screened_stocks[stock['Ticker']]['eps_QoQ_yearly_rule'] = eps_QoQ_yearly_rule
+      screened_stocks[stock['Ticker']]['eps_QoQ_yearly_rule_score'] = score*n_value
+      screened_stocks[stock['Ticker']]['eps_QoQ_yearly_rule_nvalue'] = n_value
 
 
-    # Sales QoQ Yearly > 25% rule
-    if Sales_QoQ_percent >= .25:
-      sales_QoQ_yearly_rule = True
+      # Sales QoQ Yearly > 25% rule
+      if Sales_QoQ_percent >= .25:
+        sales_QoQ_yearly_rule = True
+        n_value = 2**8
+      else:
+        sales_QoQ_yearly_rule = False
+        n_value = 0.0
       score = StockScreener.percent_diff(Sales_QoQ_percent, 0.25)
-    else:
-      sales_QoQ_yearly_rule = False
-      score = 0.0
-    weight = 1.0
-    screened_stocks[stock['Ticker']]['sales_QoQ_yearly_rule'] = sales_QoQ_yearly_rule
-    screened_stocks[stock['Ticker']]['sales_QoQ_yearly_rule_score'] = weight*score
+      screened_stocks[stock['Ticker']]['sales_QoQ_yearly_rule'] = sales_QoQ_yearly_rule
+      screened_stocks[stock['Ticker']]['sales_QoQ_yearly_rule_score'] = n_value*score
+      screened_stocks[stock['Ticker']]['sales_QoQ_yearly_rule_nvalue'] = n_value
 
 
-    # Shares Outstanding <= 25 mil
-    if shares_outstanding <= 25e6:
-      shares_outstanding_rule = True
+      # Shares Outstanding <= 25 mil
+      if shares_outstanding <= 25e6:
+        shares_outstanding_rule = True
+        n_value = 2**4
+      else:
+        shares_outstanding_rule = False
+        n_value = 0.0
+
       score = StockScreener.percent_diff(shares_outstanding, 25e6)
-    else:
-      shares_outstanding_rule = False
-      score = StockScreener.percent_diff(shares_outstanding, 25e6)
-    weight = 0.5
-    screened_stocks[stock['Ticker']]['shares_outstanding_rule'] = shares_outstanding_rule
-    screened_stocks[stock['Ticker']]['shares_outstanding_rule_score'] = score*weight
+      screened_stocks[stock['Ticker']]['shares_outstanding_rule'] = shares_outstanding_rule
+      screened_stocks[stock['Ticker']]['shares_outstanding_rule_score'] = score*n_value
+      screened_stocks[stock['Ticker']]['shares_outstanding_rule_nvalue'] = n_value
 
 
-    # Institutional Ownership < 35%
-    if 0.05 <= inst_own <= .35:
-      inst_ownership_rule = True
-      score = 1.0
-    else:
-      inst_ownership_rule = False
-      score = 0.0
-    weight = 0.5
-    screened_stocks[stock['Ticker']]['inst_ownership_rule'] = inst_ownership_rule
-    screened_stocks[stock['Ticker']]['inst_ownership_rule_score'] = score*weight
-
-
-    # Positive 200d MA positive
-    SMA200_slope_rule, score = StockScreener.SMA200_slope_positive_rule(yahoo_df, ticker=stock['Ticker'], days=21)
-    weight = 1.0
-    screened_stocks[stock['Ticker']]['SMA200_slope_rule'] = SMA200_slope_rule
-    screened_stocks[stock['Ticker']]['SMA200_slope_rul_score'] = weight*score
-        
-    # 150d MA greater than 200d MA
-    if SMA150_value > SMA200_value:
-        SMA150_greater_SMA200_rule = True
-        score = StockScreener.percent_diff(SMA150_value,SMA200_value)
-    else:
-        SMA150_greater_SMA200_rule = False
+      # Institutional Ownership < 35%
+      if 0.05 <= inst_own <= .35:
+        inst_ownership_rule = True
+        score = 1.0
+        n_value = 2**4
+      else:
+        inst_ownership_rule = False
         score = 0.0
-    screened_stocks[stock['Ticker']]['SMA150_greater_SMA200_rule'] = SMA150_greater_SMA200_rule
-    screened_stocks[stock['Ticker']]['SMA150_greater_SMA200_rule_score'] = weight*score
+        n_value = 0.0
+      weight = 0.5
+      screened_stocks[stock['Ticker']]['inst_ownership_rule'] = inst_ownership_rule
+      screened_stocks[stock['Ticker']]['inst_ownership_rule_score'] = score*n_value
+      screened_stocks[stock['Ticker']]['inst_ownership_rule_nvalue'] = n_value
 
-        
-    # 50d MA greater than 150d MA
-    if SMA50_value > SMA150_value:
-        SMA50_greater_SMA150_rule = True
-        score = StockScreener.percent_diff(SMA50_value,SMA150_value)
-    else:
-        SMA50_greater_SMA150_rule = False
-        score = 0.0
-    screened_stocks[stock['Ticker']]['SMA50_greater_SMA150_rule'] = SMA50_greater_SMA150_rule
-    screened_stocks[stock['Ticker']]['SMA50_greater_SMA150_rule_score'] = weight*score
 
-        
-    # Close above 50d MA
-    if prev_close > SMA50_value:
-        close_greater_SMA50_rule = True
-        score = StockScreener.percent_diff(prev_close,SMA50_value)
-    else:
-        close_greater_SMA50_rule = False
-        score = 0.0
-    screened_stocks[stock['Ticker']]['close_greater_SMA50_rule'] = close_greater_SMA50_rule
-    screened_stocks[stock['Ticker']]['close_greater_SMA50_rule_score'] = score*weight
+      # Positive 200d MA positive
+      SMA200_slope_rule, score, n_value = StockScreener.SMA200_slope_positive_rule(yahoo_df, ticker=stock['Ticker'], days=21)
+      screened_stocks[stock['Ticker']]['SMA200_slope_rule'] = SMA200_slope_rule
+      screened_stocks[stock['Ticker']]['SMA200_slope_rul_score'] = n_value*score
+      screened_stocks[stock['Ticker']]['SMA200_slope_rul_nvalue'] = n_value
+          
+      # 150d MA greater than 200d MA
+      if SMA150_value > SMA200_value:
+          SMA150_greater_SMA200_rule = True
+          n_value = 2**8
+      else:
+          SMA150_greater_SMA200_rule = False
+          n_value = 0.0
+      score = StockScreener.percent_diff(SMA150_value,SMA200_value)
+      screened_stocks[stock['Ticker']]['SMA150_greater_SMA200_rule'] = SMA150_greater_SMA200_rule
+      screened_stocks[stock['Ticker']]['SMA150_greater_SMA200_rule_score'] = n_value*score
+      screened_stocks[stock['Ticker']]['SMA150_greater_SMA200_rule_nvalue'] = n_value
 
-        
-    # 52 week high low span rule
-    if 0.75*week52_high > 1.25*week52_low:
-        week52_span_rule = True
-        score = StockScreener.percent_diff(0.75*week52_high, 1.25*week52_low)
-    else:
-        week52_span_rule = False
-        score = 0.0
-    weight = 1.0
-    screened_stocks[stock['Ticker']]['week52_span_rule'] = week52_span_rule
-    screened_stocks[stock['Ticker']]['week52_span_rule_score'] = score*weight
+          
+      # 50d MA greater than 150d MA
+      if SMA50_value > SMA150_value:
+          SMA50_greater_SMA150_rule = True
+          n_value = 2**8
+      else:
+          SMA50_greater_SMA150_rule = False
+          n_value = 0.0
+      score = StockScreener.percent_diff(SMA50_value,SMA150_value)
+      screened_stocks[stock['Ticker']]['SMA50_greater_SMA150_rule'] = SMA50_greater_SMA150_rule
+      screened_stocks[stock['Ticker']]['SMA50_greater_SMA150_rule_score'] = n_value*score
+      screened_stocks[stock['Ticker']]['SMA50_greater_SMA150_rule_nvalue'] = n_value
 
-    
-    # Close above 52 week high - 25%
-    if prev_close > 0.75*week52_high:
-        close_above_52weekhigh_rule = True
-        score = StockScreener.percent_diff(prev_close, 0.75*week52_high)
-    else:
-        close_above_52weekhigh_rule = False
-        score = 0.0
-    weight = 1.0
-    screened_stocks[stock['Ticker']]['close_above_52weekhigh_rule'] = close_above_52weekhigh_rule
-    screened_stocks[stock['Ticker']]['close_above_52weekhigh_rule_score'] = score*weight
+          
+      # Close above 50d MA
+      if prev_close > SMA50_value:
+          close_greater_SMA50_rule = True
+          n_value = 2**8
+      else:
+          close_greater_SMA50_rule = False
+          n_value = 0.0
+      score = StockScreener.percent_diff(prev_close,SMA50_value)
+      screened_stocks[stock['Ticker']]['close_greater_SMA50_rule'] = close_greater_SMA50_rule
+      screened_stocks[stock['Ticker']]['close_greater_SMA50_rule_score'] = score*n_value
+      screened_stocks[stock['Ticker']]['close_greater_SMA50_rule_nvalue'] = n_value
 
-    return screened_stocks
+          
+      # 52 week high low span rule
+      if 0.75*week52_high > 1.25*week52_low:
+          week52_span_rule = True
+          n_value = 2**8
+      else:
+          week52_span_rule = False
+          n_value = 0.0
+      score = StockScreener.percent_diff(0.75*week52_high, 1.25*week52_low)
+      screened_stocks[stock['Ticker']]['week52_span_rule'] = week52_span_rule
+      screened_stocks[stock['Ticker']]['week52_span_rule_score'] = score*n_value
+      screened_stocks[stock['Ticker']]['week52_span_rule_nvalue'] = n_value
+
+      
+      # Close above 52 week high - 25%
+      if prev_close > 0.75*week52_high:
+          close_above_52weekhigh_rule = True
+          n_value = 2**8
+      else:
+          close_above_52weekhigh_rule = False
+          n_value = 0.0
+      score = StockScreener.percent_diff(prev_close, 0.75*week52_high)
+      screened_stocks[stock['Ticker']]['close_above_52weekhigh_rule'] = close_above_52weekhigh_rule
+      screened_stocks[stock['Ticker']]['close_above_52weekhigh_rule_score'] = score*n_value
+      screened_stocks[stock['Ticker']]['close_above_52weekhigh_rule_nvalue'] = n_value
+
+      return screened_stocks
+    except:
+      return {}
 
   @staticmethod
   def cleanup_screen(df_out):
@@ -469,22 +491,22 @@ class StockScreener:
 
     df_out.columns = cols
 
-    df_out = df_out[df_out['Primary Passed Tests']>5]
+    # df_out = df_out[df_out['Primary Passed Tests']>5]
     return df_out
 
   @staticmethod
   def main_screen(stock_list):
 
-    results = []
-    for stock in tqdm(stock_list, total=len(stock_list.data)):
-      try:
-        result = StockScreener.screen_stock(stock)
-        results.append(result)
-      except:
-        continue
+    # results = []
+    # for stock in tqdm(stock_list, total=len(stock_list.data)):
+    #   try:
+    #     result = StockScreener.screen_stock(stock)
+    #     results.append(result)
+    #   except:
+    #     continue
 
     # Digital Ocean Does Not Support Multiprocessing
-    # results = process_map(StockScreener.screen_stock, stock_list, max_workers=8)
+    results = process_map(StockScreener.screen_stock, stock_list, max_workers=8)
 
     screened_stocks = {}
     for d in results:
@@ -520,7 +542,11 @@ class StockScreener:
     cols = df.columns
     score_cols = [col for col in cols if "score" in col]
     df['Lwowski Rating'] = (df[list(score_cols)]).sum(1)
-    df = df.sort_values(by=['Lwowski Rating'], ascending=False)
+
+    nvalue_cols = [col for col in cols if "nvalue" in col]
+    df['N-Value Rating'] = (df[list(nvalue_cols)]).sum(1)
+    df = df.sort_values(by=['N-Value Rating', 'Lwowski Rating'], ascending=False)
+
     return df
 
   def screen(self):
