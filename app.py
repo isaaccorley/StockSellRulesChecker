@@ -14,7 +14,7 @@ def show_tables():
     data = pd.read_csv('screener_results.csv')
     data.set_index(['Unnamed: 0'], inplace=True)
     data.index.name=None
-    data = data.sort_values(by=['Primary Passed Tests', 'Secondary Passed Tests'], ascending=False)
+    data = data.sort_values(by=['Lwowski Rating'], ascending=False)
     data =  data.style.apply(color_passing_tests).render()
 
     fname = pathlib.Path('screener_results.csv')
