@@ -491,22 +491,22 @@ class StockScreener:
 
     df_out.columns = cols
 
-    # df_out = df_out[df_out['Primary Passed Tests']>5]
+    df_out = df_out[df_out['Primary Passed Tests']>5]
     return df_out
 
   @staticmethod
   def main_screen(stock_list):
 
-    # results = []
-    # for stock in tqdm(stock_list, total=len(stock_list.data)):
-    #   try:
-    #     result = StockScreener.screen_stock(stock)
-    #     results.append(result)
-    #   except:
-    #     continue
+    results = []
+    for stock in tqdm(stock_list, total=len(stock_list.data)):
+      try:
+        result = StockScreener.screen_stock(stock)
+        results.append(result)
+      except:
+        continue
 
     # Digital Ocean Does Not Support Multiprocessing
-    results = process_map(StockScreener.screen_stock, stock_list, max_workers=8)
+    # results = process_map(StockScreener.screen_stock, stock_list, max_workers=8)
 
     screened_stocks = {}
     for d in results:
